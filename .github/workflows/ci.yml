@@ -1,0 +1,160 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, development ]
+  pull_request:
+    branches: [ main, development ]
+
+jobs:
+  lint-and-test-client:
+    name: Lint and Test Client
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './client/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: ./client
+        run: npm ci
+
+      - name: Run linter
+        working-directory: ./client
+        run: npm run lint
+
+      - name: Run type check
+        working-directory: ./client
+        run: npm run type-check
+
+    # Add test step once tests are implemented
+    # - name: Run tests
+    #   working-directory: ./client
+    #   run: npm test
+
+  lint-and-test-server:
+    name: Lint and Test Server
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: beckdash_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './server/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: ./server
+        run: npm ci
+
+      - name: Run linter
+        working-directory: ./server
+        run: npm run lint
+
+      - name: Generate Prisma client
+        working-directory: ./server
+        run: npx prisma generate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/beckdash_test
+
+    # Add test step once tests are implemented
+    # - name: Run tests
+    #   working-directory: ./server
+    #   run: npm test
+    #   env:
+    #     DATABASE_URL: postgresql://postgres:postgres@localhost:5432/beckdash_test
+    #     REDIS_URL: redis://localhost:6379
+    #     JWT_SECRET: test_jwt_secret
+    #     REFRESH_TOKEN_SECRET: test_refresh_token_secret
+    #     NODE_ENV: test
+
+  build:
+    name: Build Applications
+    needs: [lint-and-test-client, lint-and-test-server]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Build client
+        working-directory: ./client
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build server
+        working-directory: ./server
+        run: |
+          npm ci
+          npx prisma generate
+          npm run build
+
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: |
+            client/dist
+            server/dist
+
+  # Deploy job - uncomment and configure for production deployment
+  # deploy:
+  #   name: Deploy to Production
+  #   if: github.ref == 'refs/heads/main'
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #
+  #   steps:
+  #   - uses: actions/checkout@v3
+  #
+  #   - name: Download build artifacts
+  #     uses: actions/download-artifact@v3
+  #     with:
+  #       name: build-artifacts
+  #
+  #   - name: Deploy to Railway
+  #     uses: devcontainers/ci@v0.3
+  #     with:
+  #       push: always
+  #       imageName: beckdash
+  #     env:
+  #       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}

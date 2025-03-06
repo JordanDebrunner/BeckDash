@@ -1,0 +1,176 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"] // Add this line
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - Core user information and authentication
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  password          String    // Hashed password
+  firstName         String?
+  lastName          String?
+  profileImageUrl   String?
+  theme             String?   @default("light") // User preference for UI theme
+  notificationsEnabled Boolean @default(true)  // Global notification setting
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relationships with other models
+  events            Event[]
+  tasks             Task[]
+  plants            Plant[]
+  recipes           Recipe[]
+  maintenanceTasks  MaintenanceTask[]
+  weatherLocations  WeatherLocation[]
+  mealPlans         MealPlan[]
+}
+
+// Calendar event model - For appointments, reminders, events
+model Event {
+  id          String    @id @default(uuid())
+  title       String
+  description String?   @db.Text
+  startDate   DateTime
+  endDate     DateTime
+  allDay      Boolean   @default(false)
+  location    String?
+  category    String?   // Work, Personal, Family, etc.
+  color       String?   // For UI display
+  isRecurring Boolean   @default(false)
+  recurrence  Json?     // JSON to store recurrence rules (pattern, frequency, end date)
+  reminderTime Int?     // Minutes before event to send reminder
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Task model - For to-dos and action items
+model Task {
+  id          String    @id @default(uuid())
+  title       String
+  description String?   @db.Text
+  dueDate     DateTime?
+  completedAt DateTime?
+  priority    String?   // Low, Medium, High
+  status      String    // Todo, InProgress, Done
+  category    String?   // Chores, Shopping, Work, etc.
+  reminderAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Plant model - For tracking household plants
+model Plant {
+  id                String    @id @default(uuid())
+  name              String
+  species           String?
+  image             String?
+  wateringSchedule  String?   // e.g., "Every 5 days"
+  wateringAmount    String?   // e.g., "1 cup"
+  lastWatered       DateTime?
+  nextWatering      DateTime?
+  fertilizeSchedule String?   // e.g., "Monthly during growing season"
+  lastFertilized    DateTime?
+  nextFertilizing   DateTime?
+  location          String?   // Where in the house
+  lightNeeds        String?   // e.g., "Bright indirect", "Low light"
+  notes             String?   @db.Text
+  healthStatus      String?   // Healthy, Needs Attention, etc.
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Recipe model - For storing cooking recipes
+model Recipe {
+  id              String    @id @default(uuid())
+  title           String
+  description     String?   @db.Text
+  ingredients     Json      // Array of ingredients with amounts
+  instructions    String    @db.Text
+  prepTime        Int?      // In minutes
+  cookTime        Int?      // In minutes
+  servings        Int?
+  imageUrl        String?
+  favorited       Boolean   @default(false)
+  calories        Int?      // Per serving
+  tags            String[]  // e.g., "dinner", "vegetarian", "quick"
+  mealPlans       MealPlan[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// MealPlan model - For planning meals for specific dates
+model MealPlan {
+  id              String    @id @default(uuid())
+  date            DateTime
+  mealType        String    // Breakfast, Lunch, Dinner, Snack
+  notes           String?   @db.Text
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  recipeId        String
+  recipe          Recipe    @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Maintenance task model - For home upkeep and chores
+model MaintenanceTask {
+  id              String    @id @default(uuid())
+  title           String
+  description     String?   @db.Text
+  dueDate         DateTime?
+  completedDate   DateTime?
+  frequency       String?   // One-time, Daily, Weekly, Monthly, etc.
+  category        String?   // HVAC, Plumbing, Electrical, etc.
+  priority        String?   // Low, Medium, High
+  notes           String?   @db.Text
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// WeatherLocation model - For tracking weather in multiple locations
+model WeatherLocation {
+  id              String    @id @default(uuid())
+  name            String    // Display name for the location
+  city            String    // City name for API calls
+  country         String?   // Country code
+  latitude        Float?    // For precise location tracking
+  longitude       Float?    // For precise location tracking
+  isDefault       Boolean   @default(false) // Is this the user's primary location
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
