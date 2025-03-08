@@ -7,11 +7,14 @@
 import React, { useState } from 'react';
 import Layout from '../components/common/Layout';
 import CalendarGrid from '../components/calendar/CalendarGrid';
+import WeekView from '../components/calendar/WeekView';
+import DayView from '../components/calendar/DayView';
+import AgendaView from '../components/calendar/AgendaView';
 import EventModal from '../components/calendar/EventModal';
 import Button from '../components/common/Button';
 import useCalendar from '../hooks/useCalendar';
-import { Event, EventCategory } from '../types/Event';
-import { formatDateToLocale, getMonthName } from '../utils/dateUtils';
+import { Event, EventCategory, CreateEventRequest } from '../types/Event';
+import { formatDateToLocale, getMonthName, isToday } from '../utils/dateUtils';
 
 /**
  * Calendar page component
@@ -68,11 +71,13 @@ const CalendarPage: React.FC = () => {
   };
 
   // Save event
-  const handleSaveEvent = async (eventData: any) => {
+  const handleSaveEvent = async (eventData: CreateEventRequest) => {
     if (modalMode === 'create') {
       await createEvent(eventData);
     } else if (modalMode === 'edit' && selectedEvent) {
-      await updateEvent(selectedEvent.id, eventData);
+      // Use the ID from the event data if available, otherwise use the selectedEvent ID
+      const id = eventData.id || selectedEvent.id;
+      await updateEvent(id, eventData);
     }
 
     // Refresh events
@@ -260,16 +265,29 @@ const CalendarPage: React.FC = () => {
               />
             )}
 
-            {/* Other views (week, day, agenda) would be implemented here */}
-            {(view === 'week' || view === 'day' || view === 'agenda') && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
-                <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300">
-                  {view.charAt(0).toUpperCase() + view.slice(1)} view is coming soon!
-                </h3>
-                <p className="mt-2 text-gray-500 dark:text-gray-400">
-                  We're currently working on implementing this view.
-                </p>
-              </div>
+            {view === 'week' && (
+              <WeekView
+                currentDate={currentDate}
+                events={events}
+                onDateClick={handleDateClick}
+                onEventClick={handleEventClick}
+              />
+            )}
+
+            {view === 'day' && (
+              <DayView
+                currentDate={currentDate}
+                events={events}
+                onEventClick={handleEventClick}
+              />
+            )}
+
+            {view === 'agenda' && (
+              <AgendaView
+                currentDate={currentDate}
+                events={events}
+                onEventClick={handleEventClick}
+              />
             )}
           </div>
         )}

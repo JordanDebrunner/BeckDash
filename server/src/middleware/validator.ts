@@ -16,37 +16,46 @@ import logger from '../utils/logger';
  * @returns Express middleware function
  */
 export const validate = (schema: AnyZodObject) => {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void | Response> => {
+  return (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Combine request objects to validate (based on HTTP method)
-      const dataToValidate = {
+      // Log the incoming request body for debugging
+      logger.debug('Validating request:', {
+        body: req.body,
+        path: req.path,
+        method: req.method
+      });
+
+      // Create a validation object with request properties
+      const validationObj = {
         body: req.body,
         query: req.query,
-        params: req.params,
+        params: req.params
       };
 
-      // Validate data against schema
-      await schema.parseAsync(dataToValidate);
-
-      // Continue to controller if validation passes
+      // Validate against the schema
+      schema.parse(validationObj);
+      
+      // If validation passes, continue
       next();
     } catch (error) {
-      // Handle validation errors
+      // If validation fails, return a validation error response
       if (error instanceof ZodError) {
-        logger.debug('Validation error:', error.errors);
-
-        // Format errors for response
-        const formattedErrors = error.errors.map((err) => ({
+        logger.error('Validation error:', {
+          errors: error.errors,
+          body: req.body,
+          path: req.path
+        });
+        
+        const errors = error.errors.map(err => ({
           field: err.path.join('.'),
-          message: err.message,
-          code: err.code,
+          message: err.message
         }));
-
-        // Send validation error response
-        return validationError(res, formattedErrors);
+        
+        return validationError(res, 'Validation error', errors);
       }
-
-      // Pass other errors to global error handler
+      
+      // If it's not a ZodError, log and pass it to the next error handler
+      logger.error('Non-validation error in validator middleware:', error);
       next(error);
     }
   };
@@ -94,7 +103,7 @@ export const validateRequest = (schema: AnyZodObject) => {
         }));
 
         // Send validation error response
-        return validationError(res, formattedErrors);
+        return validationError(res, 'Validation error', formattedErrors);
       }
 
       // Pass other errors to global error handler

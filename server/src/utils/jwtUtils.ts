@@ -34,10 +34,13 @@ export const generateRefreshToken = (payload: TokenPayload): string => {
 // Verify access token
 export const verifyAccessToken = (token: string): TokenPayload | null => {
   try {
+    logger.debug(`Verifying access token: ${token.substring(0, 10)}...`);
     const decoded = jwt.verify(token, config.auth.jwtSecret) as TokenPayload;
+    logger.debug('Token verified successfully');
     return decoded;
-  } catch (error) {
-    logger.error('JWT verification failed:', error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`JWT verification failed: ${errorMessage}`);
     return null;
   }
 };
@@ -45,10 +48,13 @@ export const verifyAccessToken = (token: string): TokenPayload | null => {
 // Verify refresh token
 export const verifyRefreshToken = (token: string): TokenPayload | null => {
   try {
+    logger.debug(`Verifying refresh token: ${token.substring(0, 10)}...`);
     const decoded = jwt.verify(token, config.auth.refreshTokenSecret) as TokenPayload;
+    logger.debug('Refresh token verified successfully');
     return decoded;
-  } catch (error) {
-    logger.error('Refresh token verification failed:', error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`Refresh token verification failed: ${errorMessage}`);
     return null;
   }
 };
@@ -62,9 +68,12 @@ export const verifyToken = (token: string, isRefreshToken = false): TokenPayload
 export const extractTokenFromHeader = (authHeader: string): string | null => {
   // Check if header exists and has the right format
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    logger.debug(`Invalid auth header format: ${authHeader}`);
     return null;
   }
 
   // Extract token from header
-  return authHeader.split(' ')[1];
+  const token = authHeader.split(' ')[1];
+  logger.debug(`Extracted token: ${token.substring(0, 10)}...`);
+  return token;
 };

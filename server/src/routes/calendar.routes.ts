@@ -6,14 +6,14 @@
 
 import { Router } from 'express';
 import calendarController from '../controllers/calendarController';
-import { authenticate } from '../middleware/authMiddleware';
+import { simpleAuthenticate } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validator';
 import { z } from 'zod';
 
 const router = Router();
 
 // Apply authentication middleware to all calendar routes
-router.use(authenticate);
+router.use(simpleAuthenticate);
 
 // Validation schemas
 const createEventSchema = z.object({

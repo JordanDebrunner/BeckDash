@@ -11,7 +11,7 @@ import {
   isSameMonth,
   getMonthName,
   getCalendarDays,
-} from '@utils/dateUtils';
+} from '../../utils/dateUtils';
 import CategoryBadge from './CategoryBadge';
 
 // Props interface
@@ -46,22 +46,26 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
     const grouped: Record<string, Event[]> = {};
 
     events.forEach(event => {
-      const startDate = new Date(event.startDate);
-      const endDate = new Date(event.endDate);
+      try {
+        const startDate = new Date(event.startDate);
+        const endDate = new Date(event.endDate);
 
-      // Create entries for each day the event spans
-      let currentDate = new Date(startDate);
-      while (currentDate <= endDate) {
-        const dateKey = currentDate.toISOString().split('T')[0];
+        // Create entries for each day the event spans
+        let currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+          const dateKey = currentDate.toISOString().split('T')[0];
 
-        if (!grouped[dateKey]) {
-          grouped[dateKey] = [];
+          if (!grouped[dateKey]) {
+            grouped[dateKey] = [];
+          }
+
+          grouped[dateKey].push(event);
+
+          // Move to next day
+          currentDate.setDate(currentDate.getDate() + 1);
         }
-
-        grouped[dateKey].push(event);
-
-        // Move to next day
-        currentDate.setDate(currentDate.getDate() + 1);
+      } catch (error) {
+        console.error('Error processing event dates:', error, event);
       }
     });
 
@@ -70,8 +74,13 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
 
   // Get events for a specific date
   const getEventsForDate = (date: Date): Event[] => {
-    const dateKey = date.toISOString().split('T')[0];
-    return eventsByDate[dateKey] || [];
+    try {
+      const dateKey = date.toISOString().split('T')[0];
+      return eventsByDate[dateKey] || [];
+    } catch (error) {
+      console.error('Error getting events for date:', error);
+      return [];
+    }
   };
 
   // Render a maximum of 3 events per day, with a "+X more" indicator if needed

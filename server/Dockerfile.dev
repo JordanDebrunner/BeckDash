@@ -5,8 +5,10 @@ COPY server/package.json server/package-lock.json ./
 # Copy Prisma schema and migrations from root
 COPY prisma/ ./prisma/
 RUN npm install
+# Explicitly install multer
+RUN npm install --save multer @types/multer
 RUN npx prisma generate
-RUN npx prisma migrate deploy  # Apply migrations
+# Skip migrations during build - they will be run when the container starts
 # Copy remaining backend files
 COPY server/ .
 EXPOSE 3000

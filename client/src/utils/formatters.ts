@@ -169,53 +169,32 @@ export const getInitials = (
 };
 
 /**
- * Format temperature with unit
- *
- * @param temp - The temperature value
- * @param unit - The temperature unit ('C' or 'F', default: 'F')
- * @returns Formatted temperature string (e.g., "72°F")
+ * Convert Celsius to Fahrenheit
  */
-export const formatTemperature = (
-  temp: number,
-  unit: 'C' | 'F' = 'F'
-): string => {
-  const roundedTemp = Math.round(temp);
-  return `${roundedTemp}°${unit}`;
+export const celsiusToFahrenheit = (celsius: number): number => {
+  return (celsius * 9/5) + 32;
 };
 
 /**
- * Convert temperature between Celsius and Fahrenheit
- *
- * @param temp - The temperature value
- * @param fromUnit - The source unit ('C' or 'F')
- * @returns Converted temperature
+ * Format temperature with unit
  */
-export const convertTemperature = (
-  temp: number,
-  fromUnit: 'C' | 'F'
-): number => {
-  if (fromUnit === 'C') {
-    // Celsius to Fahrenheit
-    return (temp * 9) / 5 + 32;
-  } else {
-    // Fahrenheit to Celsius
-    return ((temp - 32) * 5) / 9;
+export const formatTemperature = (temp: number, unit: 'C' | 'F' = 'F'): string => {
+  if (unit === 'F') {
+    // Convert from Celsius to Fahrenheit
+    temp = celsiusToFahrenheit(temp);
   }
+  return `${Math.round(temp)}°${unit}`;
 };
 
 /**
  * Format wind speed with unit
- *
- * @param speed - The wind speed value
- * @param unit - The speed unit ('mph' or 'kph', default: 'mph')
- * @returns Formatted wind speed string (e.g., "10 mph")
  */
-export const formatWindSpeed = (
-  speed: number,
-  unit: 'mph' | 'kph' = 'mph'
-): string => {
-  const roundedSpeed = Math.round(speed);
-  return `${roundedSpeed} ${unit}`;
+export const formatWindSpeed = (speed: number, unit: 'km/h' | 'mph' = 'mph'): string => {
+  if (unit === 'mph') {
+    // Convert from km/h to mph
+    speed = speed * 0.621371;
+  }
+  return `${Math.round(speed)} ${unit}`;
 };
 
 /**
@@ -230,4 +209,137 @@ export const formatMeasurement = (
   unit: string
 ): string => {
   return `${value} ${unit}${value !== 1 && !unit.endsWith('s') ? 's' : ''}`;
+};
+
+/**
+ * Format date to display day name
+ */
+export const formatDayName = (date: Date | string): string => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+};
+
+/**
+ * Format date to display full day name
+ */
+export const formatFullDayName = (date: Date | string): string => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+};
+
+/**
+ * Format date to display month and day
+ */
+export const formatMonthDay = (date: Date | string): string => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+/**
+ * Format date to display full date
+ */
+export const formatFullDate = (date: Date | string): string => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+};
+
+/**
+ * Format time to display hours and minutes
+ */
+export const formatTime = (date: Date | string): string => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+};
+
+/**
+ * Format precipitation with unit
+ */
+export const formatPrecipitation = (amount: number, unit: 'mm' | 'in' = 'in'): string => {
+  if (unit === 'in') {
+    // Convert from mm to inches
+    amount = amount / 25.4;
+  }
+  return `${amount.toFixed(1)} ${unit}`;
+};
+
+/**
+ * Format precipitation probability as percentage
+ */
+export const formatPrecipitationProbability = (probability: number): string => {
+  return `${Math.round(probability)}%`;
+};
+
+/**
+ * Format humidity as percentage
+ */
+export const formatHumidity = (humidity: number): string => {
+  return `${Math.round(humidity)}%`;
+};
+
+/**
+ * Format pressure with unit
+ */
+export const formatPressure = (pressure: number, unit: 'hPa' | 'inHg' = 'inHg'): string => {
+  if (unit === 'inHg') {
+    // Convert from hPa to inHg
+    pressure = pressure * 0.02953;
+  }
+  return `${Math.round(pressure)} ${unit}`;
+};
+
+/**
+ * Format visibility with unit
+ */
+export const formatVisibility = (visibility: number, unit: 'km' | 'mi' = 'mi'): string => {
+  // Convert meters to kilometers
+  const km = visibility / 1000;
+  
+  if (unit === 'mi') {
+    // Convert kilometers to miles
+    const miles = km * 0.621371;
+    return miles < 1 ? `${(miles * 5280).toFixed(0)} ft` : `${miles.toFixed(1)} mi`;
+  }
+  
+  return km < 1 ? `${(km * 1000).toFixed(0)} m` : `${km.toFixed(1)} km`;
+};
+
+/**
+ * Format UV index with description
+ */
+export const formatUVIndex = (uvIndex: number): { value: string; description: string } => {
+  let description = '';
+  
+  if (uvIndex <= 2) {
+    description = 'Low';
+  } else if (uvIndex <= 5) {
+    description = 'Moderate';
+  } else if (uvIndex <= 7) {
+    description = 'High';
+  } else if (uvIndex <= 10) {
+    description = 'Very High';
+  } else {
+    description = 'Extreme';
+  }
+  
+  return {
+    value: Math.round(uvIndex).toString(),
+    description
+  };
+};
+
+/**
+ * Format wind direction as cardinal direction
+ */
+export const formatWindDirection = (degrees: number): string => {
+  const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+  const index = Math.round(degrees / 22.5) % 16;
+  return directions[index];
 };

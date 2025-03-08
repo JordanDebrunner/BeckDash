@@ -69,6 +69,7 @@ export interface Event {
  * Event creation request
  */
 export interface CreateEventRequest {
+  id?: string;  // Optional id for editing existing events
   title: string;
   description?: string;
   startDate: string;             // ISO date string

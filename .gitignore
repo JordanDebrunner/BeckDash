@@ -44,4 +44,10 @@ Thumbs.db
 .pnp.js
 .yarn/
 .yarn-integrity
+
+# Aider files
 .aider*
+.aider.chat.history.md
+.aider.input.history
+.aider.tags.cache.v3/
+.aiderignore

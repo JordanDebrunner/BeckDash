@@ -6,7 +6,7 @@
 
 import express from 'express';
 import maintenanceController from '../controllers/maintenanceController';
-import { simpleAuthenticate } from '../middleware/authMiddleware';
+import { simpleAuthenticate } from '../middleware/auth.middleware';
 
 const router = express.Router();
 

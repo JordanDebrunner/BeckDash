@@ -1,53 +1,42 @@
 /**
  * Protected Route Component
  *
- * A wrapper component that protects routes from unauthenticated access
+ * A wrapper component that checks if the user is authenticated
+ * and redirects to the login page if not
  */
 
-import React, { Suspense } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import useAuth from '../../hooks/useAuth';
+import React, { ReactNode } from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import LoadingScreen from './LoadingScreen';
 
-// Loading component for suspense fallback
-const LoadingFallback = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-  </div>
-);
-
-// Props interface
+/**
+ * Props for the ProtectedRoute component
+ */
 interface ProtectedRouteProps {
-  element: React.ReactNode;
-  redirectTo?: string;
+  children: ReactNode;
 }
 
 /**
- * Component that restricts access to authenticated users only
- * and handles React.Suspense for lazy-loaded components
+ * ProtectedRoute component
+ *
+ * Protects routes from unauthenticated access
  */
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
-  element,
-  redirectTo = '/login',
-}) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
-  const location = useLocation();
 
-  // Show loading state while checking authentication
+  // Show loading indicator while checking authentication
   if (isLoading) {
-    return <LoadingFallback />;
+    return <LoadingScreen />;
   }
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
-    return <Navigate to={redirectTo} state={{ from: location.pathname }} replace />;
+    return <Navigate to="/login" replace />;
   }
 
-  // Wrap the element in Suspense to handle lazy-loaded components
-  return (
-    <Suspense fallback={<LoadingFallback />}>
-      {element}
-    </Suspense>
-  );
+  // Render the protected content if authenticated
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;

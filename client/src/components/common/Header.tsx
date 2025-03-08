@@ -40,14 +40,26 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
     }
   };
 
+  // Generate initials for avatar fallback
+  const getInitials = () => {
+    if (!user) return '?';
+    
+    if (user.firstName) {
+      return user.firstName.charAt(0).toUpperCase() + 
+        (user.lastName ? user.lastName.charAt(0).toUpperCase() : '');
+    }
+    
+    return user.email.charAt(0).toUpperCase();
+  };
+
   return (
-    <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 h-16 z-30 sticky top-0">
-      <div className="px-4 h-full flex items-center justify-between">
+    <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 h-16 z-30 sticky top-0 shadow-sm backdrop-blur-sm bg-white/90 dark:bg-gray-900/90">
+      <div className="px-4 md:px-6 h-full flex items-center justify-between max-w-7xl mx-auto">
         {/* Left section: Logo and menu toggle */}
         <div className="flex items-center">
           {/* Sidebar toggle button (for mobile) */}
           <button
-            className="p-2 rounded-md text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline-none"
+            className="p-2 rounded-md text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline-none transition-colors duration-200"
             onClick={toggleSidebar}
             aria-label={isSidebarOpen ? 'Close menu' : 'Open menu'}
           >
@@ -68,34 +80,12 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
 
           {/* Logo/App Name */}
           <Link to="/" className="ml-2 flex items-center">
-            <span className="text-xl font-bold text-primary">BeckDash</span>
+            <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">BeckDash</span>
           </Link>
         </div>
 
-        {/* Right section: User profile and theme toggle */}
+        {/* Right section: User profile */}
         <div className="flex items-center space-x-4">
-          {/* Theme toggle button */}
-          <button
-            className="p-2 rounded-md text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline-none"
-            aria-label="Toggle theme"
-            // We'll implement theme toggling logic later
-          >
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-              />
-            </svg>
-          </button>
-
           {/* User profile dropdown */}
           {isAuthenticated ? (
             <div className="relative">
@@ -105,14 +95,25 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
                 aria-expanded={isProfileMenuOpen}
                 aria-haspopup="true"
               >
-                <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center">
-                  {user?.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
-                </div>
+                {user?.profileImageUrl ? (
+                  <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-primary shadow-md">
+                    <img 
+                      src={user.profileImageUrl} 
+                      alt={`${user.firstName || 'User'}'s profile`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-accent text-white flex items-center justify-center shadow-md">
+                    {getInitials()}
+                  </div>
+                )}
                 <span className="hidden md:block text-sm font-medium">
                   {user?.firstName || user?.email}
                 </span>
                 <svg
-                  className="h-5 w-5 text-gray-400"
+                  className="h-5 w-5 text-gray-400 transition-transform duration-200 ease-in-out"
+                  style={{ transform: isProfileMenuOpen ? 'rotate(180deg)' : 'rotate(0)' }}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -131,7 +132,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
                     aria-hidden="true"
                   />
                   <div
-                    className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-20 ring-1 ring-black ring-opacity-5"
+                    className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-20 ring-1 ring-black ring-opacity-5 transform origin-top-right transition-all duration-200 ease-in-out"
                     role="menu"
                     aria-orientation="vertical"
                     aria-labelledby="user-menu"
@@ -142,7 +143,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
                     </div>
                     <Link
                       to="/profile"
-                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
                       role="menuitem"
                       onClick={closeProfileMenu}
                     >
@@ -150,14 +151,14 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
                     </Link>
                     <Link
                       to="/settings"
-                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
                       role="menuitem"
                       onClick={closeProfileMenu}
                     >
                       Settings
                     </Link>
                     <button
-                      className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
                       role="menuitem"
                       onClick={() => {
                         closeProfileMenu();
@@ -174,13 +175,13 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
             <div className="flex items-center space-x-4">
               <Link
                 to="/login"
-                className="text-sm font-medium text-primary hover:text-primary-dark"
+                className="text-sm font-medium text-primary hover:text-primary-dark transition-colors duration-150"
               >
                 Sign in
               </Link>
               <Link
                 to="/register"
-                className="text-sm font-medium bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark"
+                className="text-sm font-medium bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md transition-colors duration-150 shadow-sm hover:shadow"
               >
                 Sign up
               </Link>

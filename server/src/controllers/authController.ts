@@ -6,7 +6,7 @@
 
 import { Response, NextFunction } from 'express';
 import { success, unauthorized, badRequest, created, serverError } from '../utils/responseFormatter';
-import { RequestWithUser } from '../middleware/authMiddleware';
+import { RequestWithUser } from '../types/request.types';
 import logger from '../utils/logger';
 
 // Add this at the top of the file, after the imports

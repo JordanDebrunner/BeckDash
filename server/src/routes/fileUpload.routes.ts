@@ -7,7 +7,7 @@
 import express from 'express';
 import fileUploadController from '../controllers/fileUpload.controller';
 import fileUploadService from '../services/fileUpload.service';
-import { simpleAuthenticate } from '../middleware/authMiddleware';
+import { simpleAuthenticate } from '../middleware/auth.middleware';
 
 const router = express.Router();
 

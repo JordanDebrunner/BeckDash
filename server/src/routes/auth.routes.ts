@@ -6,8 +6,7 @@
 
 import { Router } from 'express';
 import authController from '../controllers/authController';
-import { authenticate } from '../middleware/authMiddleware';
-import { authLimiter } from '../middleware/rateLimit';
+import { simpleAuthenticate } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validator';
 import { z } from 'zod';
 
@@ -53,9 +52,6 @@ const updateProfileSchema = z.object({
   }),
 });
 
-// Apply rate limiting to auth routes
-router.use(authLimiter);
-
 // Public routes
 router.post('/register', validate(registerSchema), authController.register);
 router.post('/login', validate(loginSchema), authController.login);
@@ -63,8 +59,8 @@ router.post('/refresh-token', validate(refreshTokenSchema), authController.refre
 router.post('/logout', authController.logout);
 
 // Protected routes
-router.get('/profile', authenticate, authController.getProfile);
-router.put('/profile', authenticate, validate(updateProfileSchema), authController.updateProfile);
-router.post('/change-password', authenticate, validate(changePasswordSchema), authController.changePassword);
+router.get('/profile', simpleAuthenticate, authController.getProfile);
+router.put('/profile', simpleAuthenticate, validate(updateProfileSchema), authController.updateProfile);
+router.post('/change-password', simpleAuthenticate, validate(changePasswordSchema), authController.changePassword);
 
 export default router;

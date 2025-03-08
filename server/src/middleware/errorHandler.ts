@@ -108,3 +108,35 @@ export const globalErrorHandler = (
   // Send error response
   return error(res, message, statusCode, errorDetails);
 };
+
+/**
+ * Error Handler Middleware
+ *
+ * Global error handling middleware for Express
+ */
+
+export interface AppError extends Error {
+  statusCode?: number;
+  errors?: any[];
+}
+
+export const errorHandler = (
+  err: AppError,
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  logger.error('Error:', err);
+
+  // Default to 500 server error
+  const statusCode = err.statusCode || 500;
+  const message = err.message || 'Internal Server Error';
+  const errors = err.errors || [];
+
+  res.status(statusCode).json({
+    success: false,
+    message,
+    errors: errors.length > 0 ? errors : undefined,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+};

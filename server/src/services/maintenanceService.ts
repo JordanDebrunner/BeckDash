@@ -6,6 +6,7 @@
 
 import { PrismaClient, MaintenanceTask } from '@prisma/client';
 import logger from '../utils/logger';
+import { withServiceErrorHandling, AppError, ErrorTypes, validateExists } from '../utils/errorHandler';
 
 const prisma = new PrismaClient();
 
@@ -30,24 +31,22 @@ const maintenanceService = {
   /**
    * Get all maintenance tasks for a user
    */
-  async getAllTasks(userId: string): Promise<MaintenanceTask[]> {
-    try {
+  getAllTasks: withServiceErrorHandling(
+    async (userId: string): Promise<MaintenanceTask[]> => {
       logger.debug(`Getting all maintenance tasks for user ${userId}`);
       return await prisma.maintenanceTask.findMany({
         where: { userId },
         orderBy: { dueDate: 'asc' },
       });
-    } catch (error) {
-      logger.error('Error getting maintenance tasks:', error);
-      throw error;
-    }
-  },
+    },
+    'maintenanceService.getAllTasks'
+  ),
 
   /**
    * Get a single maintenance task by ID
    */
-  async getTaskById(id: string, userId: string): Promise<MaintenanceTask | null> {
-    try {
+  getTaskById: withServiceErrorHandling(
+    async (id: string, userId: string): Promise<MaintenanceTask | null> => {
       logger.debug(`Getting maintenance task ${id} for user ${userId}`);
       return await prisma.maintenanceTask.findFirst({
         where: { 
@@ -55,17 +54,15 @@ const maintenanceService = {
           userId 
         },
       });
-    } catch (error) {
-      logger.error(`Error getting maintenance task ${id}:`, error);
-      throw error;
-    }
-  },
+    },
+    'maintenanceService.getTaskById'
+  ),
 
   /**
    * Create a new maintenance task
    */
-  async createTask(data: CreateMaintenanceTaskInput): Promise<MaintenanceTask> {
-    try {
+  createTask: withServiceErrorHandling(
+    async (data: CreateMaintenanceTaskInput): Promise<MaintenanceTask> => {
       logger.debug(`Creating maintenance task for user ${data.userId}`);
       
       // Check if the user exists
@@ -131,18 +128,15 @@ const maintenanceService = {
       
       logger.debug('Task created successfully:', result);
       return result;
-    } catch (error) {
-      logger.error('Error creating maintenance task:', error);
-      // Rethrow with more context
-      throw new Error(`Failed to create maintenance task: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  },
+    },
+    'maintenanceService.createTask'
+  ),
 
   /**
    * Update an existing maintenance task
    */
-  async updateTask(id: string, userId: string, data: UpdateMaintenanceTaskInput): Promise<MaintenanceTask> {
-    try {
+  updateTask: withServiceErrorHandling(
+    async (id: string, userId: string, data: UpdateMaintenanceTaskInput): Promise<MaintenanceTask> => {
       logger.debug(`Updating maintenance task ${id} for user ${userId}`);
       
       // Check if the user exists
@@ -192,7 +186,7 @@ const maintenanceService = {
       });
       
       if (!existingTask) {
-        throw new Error(`Task ${id} not found`);
+        throw new AppError(`Task ${id} not found`, 404, ErrorTypes.NOT_FOUND);
       }
       
       // Update the task
@@ -210,17 +204,15 @@ const maintenanceService = {
           userId: userId // Ensure the task is associated with the correct user
         },
       });
-    } catch (error) {
-      logger.error(`Error updating maintenance task ${id}:`, error);
-      throw new Error(`Failed to update maintenance task: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  },
+    },
+    'maintenanceService.updateTask'
+  ),
 
   /**
    * Delete a maintenance task
    */
-  async deleteTask(id: string, userId: string): Promise<MaintenanceTask> {
-    try {
+  deleteTask: withServiceErrorHandling(
+    async (id: string, userId: string): Promise<MaintenanceTask> => {
       logger.debug(`Deleting maintenance task ${id} for user ${userId}`);
       
       // Check if the user exists
@@ -270,24 +262,22 @@ const maintenanceService = {
       });
       
       if (!existingTask) {
-        throw new Error(`Task ${id} not found`);
+        throw new AppError(`Task ${id} not found`, 404, ErrorTypes.NOT_FOUND);
       }
       
       // Delete the task
       return await prisma.maintenanceTask.delete({
         where: { id },
       });
-    } catch (error) {
-      logger.error(`Error deleting maintenance task ${id}:`, error);
-      throw new Error(`Failed to delete maintenance task: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  },
+    },
+    'maintenanceService.deleteTask'
+  ),
 
   /**
-   * Mark a task as complete or incomplete
+   * Toggle task completion status
    */
-  async toggleTaskCompletion(id: string, userId: string, isComplete: boolean): Promise<MaintenanceTask> {
-    try {
+  toggleTaskCompletion: withServiceErrorHandling(
+    async (id: string, userId: string, isComplete: boolean): Promise<MaintenanceTask> => {
       logger.debug(`Toggling completion for task ${id} for user ${userId} to ${isComplete}`);
       
       // Check if the user exists
@@ -337,7 +327,7 @@ const maintenanceService = {
       });
       
       if (!existingTask) {
-        throw new Error(`Task ${id} not found`);
+        throw new AppError(`Task ${id} not found`, 404, ErrorTypes.NOT_FOUND);
       }
       
       // Update the task
@@ -348,57 +338,65 @@ const maintenanceService = {
           userId: userId // Ensure the task is associated with the correct user
         },
       });
-    } catch (error) {
-      logger.error(`Error toggling completion for task ${id}:`, error);
-      throw new Error(`Failed to toggle task completion: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  },
+    },
+    'maintenanceService.toggleTaskCompletion'
+  ),
 
   /**
    * Get overdue maintenance tasks
    */
-  async getOverdueTasks(userId: string): Promise<MaintenanceTask[]> {
-    try {
-      const now = new Date();
-      return await prisma.maintenanceTask.findMany({
-        where: {
-          userId,
-          dueDate: { lt: now },
-          completedDate: null,
-        },
-        orderBy: { dueDate: 'asc' },
-      });
-    } catch (error) {
-      logger.error('Error getting overdue maintenance tasks:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Get upcoming maintenance tasks due in the next X days
-   */
-  async getUpcomingTasks(userId: string, days: number = 7): Promise<MaintenanceTask[]> {
-    try {
-      const now = new Date();
-      const future = new Date();
-      future.setDate(future.getDate() + days);
-
+  getOverdueTasks: withServiceErrorHandling(
+    async (userId: string): Promise<MaintenanceTask[]> => {
+      logger.debug(`Getting overdue tasks for user ${userId}`);
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
       return await prisma.maintenanceTask.findMany({
         where: {
           userId,
           dueDate: {
-            gte: now,
-            lte: future,
+            lt: today
           },
-          completedDate: null,
+          completedDate: null
         },
-        orderBy: { dueDate: 'asc' },
+        orderBy: {
+          dueDate: 'asc'
+        }
       });
-    } catch (error) {
-      logger.error(`Error getting upcoming maintenance tasks for next ${days} days:`, error);
-      throw error;
-    }
-  },
+    },
+    'maintenanceService.getOverdueTasks'
+  ),
+
+  /**
+   * Get upcoming maintenance tasks
+   */
+  getUpcomingTasks: withServiceErrorHandling(
+    async (userId: string, days: number = 7): Promise<MaintenanceTask[]> => {
+      logger.debug(`Getting upcoming tasks for user ${userId} for next ${days} days`);
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const futureDate = new Date(today);
+      futureDate.setDate(today.getDate() + days);
+      
+      return await prisma.maintenanceTask.findMany({
+        where: {
+          userId,
+          dueDate: {
+            gte: today,
+            lte: futureDate
+          },
+          completedDate: null
+        },
+        orderBy: {
+          dueDate: 'asc'
+        }
+      });
+    },
+    'maintenanceService.getUpcomingTasks'
+  )
 };
 
 export default maintenanceService;

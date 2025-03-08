@@ -7,7 +7,7 @@
 import React, { createContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { User, LoginRequest, RegisterRequest, ProfileUpdateRequest, PasswordChangeRequest } from '../types/User';
 import authService from '../services/auth.service';
-import { ApiError } from '../services/api.service';
+import { ApiError } from '../../../shared/types/api.types';
 
 // Define the shape of the context
 interface AuthContextType {
@@ -20,7 +20,7 @@ interface AuthContextType {
   login: (data: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (data: ProfileUpdateRequest) => Promise<void>;
+  updateProfile: (data: ProfileUpdateRequest) => Promise<User>;
   changePassword: (data: PasswordChangeRequest) => Promise<void>;
   clearError: () => void;
 }
@@ -35,7 +35,7 @@ export const AuthContext = createContext<AuthContextType>({
   login: async () => {},
   register: async () => {},
   logout: async () => {},
-  updateProfile: async () => {},
+  updateProfile: async () => { return {} as User; },
   changePassword: async () => {},
   clearError: () => {},
 });
@@ -76,8 +76,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Failed to load user profile:', error);
       setUser(null);
       // If we get a 401 error, clear the token
-      if (error instanceof ApiError && error.status === 401) {
-        localStorage.removeItem('accessToken');
+      if (error instanceof Error) {
+        const errorObj = error as any;
+        if (errorObj.status === 401) {
+          localStorage.removeItem('accessToken');
+        }
       }
     } finally {
       setIsLoading(false);
@@ -93,10 +96,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(response.user);
     } catch (error) {
       console.error('Login failed:', error);
-      if (error instanceof ApiError) {
-        setError(error.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
+      if (error instanceof Error) {
+        const errorObj = error as any;
+        if (errorObj.status === 429) {
+          setError('Too many login attempts. Please wait a few minutes before trying again.');
+        } else if (errorObj.status === 401) {
+          setError('Invalid email or password.');
+        } else {
+          setError(error.message);
+        }
       } else {
         setError('An unknown error occurred during login');
       }
@@ -115,10 +123,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(response.user);
     } catch (error) {
       console.error('Registration failed:', error);
-      if (error instanceof ApiError) {
-        setError(error.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
+      if (error instanceof Error) {
+        const errorObj = error as any;
+        if (errorObj.status === 429) {
+          setError('Too many registration attempts. Please wait a few minutes before trying again.');
+        } else if (errorObj.status === 409) {
+          setError('An account with this email already exists.');
+        } else {
+          setError(error.message);
+        }
       } else {
         setError('An unknown error occurred during registration');
       }
@@ -149,13 +162,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       clearError();
+      
+      console.log('AuthContext: Updating profile with data:', data);
+      
+      // Special handling for theme updates
+      if (data.theme) {
+        console.log('AuthContext: Theme update detected:', data.theme);
+      }
+      
       const updatedUser = await authService.updateProfile(data);
-      setUser(updatedUser);
+      console.log('AuthContext: Profile updated successfully:', updatedUser);
+      
+      // Update the user state with the new data
+      setUser(prev => {
+        if (!prev) return updatedUser;
+        return { ...prev, ...updatedUser };
+      });
+      
+      return updatedUser;
     } catch (error) {
       console.error('Profile update failed:', error);
-      if (error instanceof ApiError) {
-        setError(error.message);
-      } else if (error instanceof Error) {
+      if (error instanceof Error) {
         setError(error.message);
       } else {
         setError('An unknown error occurred during profile update');
@@ -174,9 +201,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await authService.changePassword(data);
     } catch (error) {
       console.error('Password change failed:', error);
-      if (error instanceof ApiError) {
-        setError(error.message);
-      } else if (error instanceof Error) {
+      if (error instanceof Error) {
         setError(error.message);
       } else {
         setError('An unknown error occurred during password change');

@@ -4,9 +4,279 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BeckDash</title>
+    <style>
+        /* Animation definitions */
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(10%, 10%); }
+        }
+
+        @keyframes wave {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(5%); }
+        }
+
+        .animate-float-slow {
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .animate-float-medium {
+            animation: float 15s ease-in-out infinite alternate;
+        }
+
+        .animate-wave {
+            animation: wave 15s ease-in-out infinite;
+        }
+
+        .animate-wave-delayed {
+            animation: wave 18s ease-in-out 2s infinite;
+        }
+
+        /* Background container - simplified approach */
+        #animated-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+            transition: opacity 0.5s ease;
+        }
+
+        /* When animation is disabled */
+        body.no-animation #animated-background {
+            opacity: 0;
+        }
+
+        /* Animated elements */
+        .bg-circle {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(20px);
+        }
+
+        .bg-circle-1 {
+            top: 20%;
+            left: 20%;
+            width: 300px;
+            height: 300px;
+            background-color: rgba(96, 165, 250, 0.7);
+        }
+
+        .bg-circle-2 {
+            bottom: 20%;
+            right: 20%;
+            width: 350px;
+            height: 350px;
+            background-color: rgba(167, 139, 250, 0.7);
+        }
+
+        .bg-wave {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .bg-wave-1 {
+            top: 50%;
+            background: linear-gradient(to right, transparent, rgba(96, 165, 250, 0.8), transparent);
+        }
+
+        .bg-wave-2 {
+            top: 60%;
+            background: linear-gradient(to right, transparent, rgba(167, 139, 250, 0.8), transparent);
+        }
+
+        /* Dark theme styles */
+        html.dark #animated-background {
+            background: radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.1), transparent 50%), 
+                        radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.1), transparent 50%);
+        }
+
+        html.dark .bg-circle-1 {
+            background-color: rgba(59, 130, 246, 0.7);
+        }
+
+        html.dark .bg-circle-2 {
+            background-color: rgba(139, 92, 246, 0.7);
+        }
+
+        html.dark .bg-wave-1 {
+            background: linear-gradient(to right, transparent, rgba(59, 130, 246, 0.8), transparent);
+        }
+
+        html.dark .bg-wave-2 {
+            background: linear-gradient(to right, transparent, rgba(139, 92, 246, 0.8), transparent);
+        }
+
+        /* Default background colors */
+        html {
+            background-color: hsl(210 40% 98%);
+        }
+        
+        html.dark {
+            background-color: hsl(222 47% 11%);
+        }
+        
+        /* Make sure the root element doesn't have a background that covers our animation */
+        #root {
+            background: transparent;
+        }
+
+        /* Ensure the body doesn't have a background that covers our animation */
+        body {
+            background: transparent;
+        }
+    </style>
+    
+    <!-- Additional styles for dark mode enforcement -->
+    <style>
+        /* More forceful dark mode styles */
+        html.dark {
+            color-scheme: dark;
+        }
+        
+        html.dark body {
+            color: white;
+            background-color: hsl(222 47% 11%);
+        }
+        
+        html.dark .bg-white {
+            background-color: hsl(224 71% 4%);
+        }
+        
+        html.dark .text-gray-900 {
+            color: white;
+        }
+        
+        html.dark .text-gray-600 {
+            color: hsl(215 20.2% 65.1%);
+        }
+        
+        /* Light theme enforcement */
+        html.light-theme {
+            color-scheme: light;
+        }
+        
+        html.light-theme body {
+            color: black;
+            background-color: hsl(210 40% 98%);
+        }
+        
+        html.light-theme .bg-gray-800 {
+            background-color: hsl(0 0% 100%);
+        }
+        
+        html.light-theme .text-white {
+            color: black;
+        }
+        
+        html.light-theme .text-gray-300 {
+            color: hsl(215.4 16.3% 46.9%);
+        }
+    </style>
+    
+    <!-- Global functions for animated background control - simplified -->
+    <script>
+        // Toggle animated background
+        window.toggleAnimatedBackground = function() {
+            const isEnabled = !document.body.classList.contains('no-animation');
+            const newState = !isEnabled;
+            
+            console.log('Toggling animated background from', isEnabled, 'to', newState);
+            
+            if (newState) {
+                // Enable animation
+                document.body.classList.remove('no-animation');
+                localStorage.setItem('animatedBackground', 'true');
+            } else {
+                // Disable animation
+                document.body.classList.add('no-animation');
+                localStorage.setItem('animatedBackground', 'false');
+            }
+            
+            return newState;
+        };
+        
+        // Get animated background state
+        window.getAnimatedBackgroundState = function() {
+            return !document.body.classList.contains('no-animation');
+        };
+        
+        // Set animated background state
+        window.setAnimatedBackgroundState = function(state) {
+            const newState = Boolean(state);
+            
+            console.log('Setting animated background to', newState);
+            
+            if (newState) {
+                // Enable animation
+                document.body.classList.remove('no-animation');
+                localStorage.setItem('animatedBackground', 'true');
+            } else {
+                // Disable animation
+                document.body.classList.add('no-animation');
+                localStorage.setItem('animatedBackground', 'false');
+            }
+            
+            return newState;
+        };
+    </script>
 </head>
 <body>
+<!-- Animated Background -->
+<div id="animated-background">
+    <div class="bg-circle bg-circle-1 animate-float-slow"></div>
+    <div class="bg-circle bg-circle-2 animate-float-medium"></div>
+    <div class="bg-wave bg-wave-1 animate-wave"></div>
+    <div class="bg-wave bg-wave-2 animate-wave-delayed"></div>
+</div>
+
 <div id="root"></div>
 <script type="module" src="/src/main.tsx"></script>
+
+<!-- Initialization script -->
+<script>
+    // Initialize animated background based on user preference
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Initializing animated background');
+        
+        const animatedBackground = localStorage.getItem('animatedBackground');
+        
+        // If the user has explicitly set a preference, use it
+        if (animatedBackground === 'false') {
+            // Disable animation
+            document.body.classList.add('no-animation');
+            console.log('Animation disabled based on user preference');
+        } else {
+            // Enable animation (default)
+            document.body.classList.remove('no-animation');
+            localStorage.setItem('animatedBackground', 'true');
+            console.log('Animation enabled (default or user preference)');
+        }
+        
+        // Initialize theme based on localStorage
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light-theme');
+        } else if (savedTheme === 'light') {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light-theme');
+        } else if (savedTheme === 'system') {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (prefersDark) {
+                document.documentElement.classList.add('dark');
+                document.documentElement.classList.remove('light-theme');
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.documentElement.classList.add('light-theme');
+            }
+        }
+    });
+</script>
 </body>
 </html>

@@ -23,10 +23,9 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: {
-      '/api/v1/auth': { // Match the full prefix
-        target: 'http://backend:3000',
+      '/api/v1': {
+        target: 'http://localhost:3000',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/v1\/auth/, '/api/v1/auth'), // Keep /api/v1/auth
       },
     },
   },

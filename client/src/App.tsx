@@ -41,7 +41,15 @@ function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <Toaster position="top-right" />
+        <Toaster 
+          position="top-right" 
+          toastOptions={{
+            style: {
+              zIndex: 9999,
+            },
+          }}
+        />
+        
         <RouterProvider router={router} />
       </ThemeProvider>
     </AuthProvider>

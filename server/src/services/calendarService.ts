@@ -9,6 +9,7 @@ import prisma from '../config/database';
 import { AppError } from '../middleware/errorHandler';
 import { PaginationParams, PaginatedResponse } from '../types';
 import logger from '../utils/logger';
+import { addDays, addWeeks, addMonths, addYears, isBefore, isAfter } from 'date-fns';
 
 // Calendar filters interface
 interface CalendarFilters extends PaginationParams {
@@ -16,6 +17,13 @@ interface CalendarFilters extends PaginationParams {
   endDate?: string;
   category?: string;
   search?: string;
+}
+
+// Interface for recurring event instances
+interface EventInstance extends Omit<Event, 'id'> {
+  id: string;
+  originalEventId?: string;
+  isInstance?: boolean;
 }
 
 // Calendar service methods
@@ -85,11 +93,38 @@ export const calendarService = {
       take: limit,
     });
 
+    // Expand recurring events if date range is provided
+    let expandedEvents = [...events];
+    if (startDate && endDate) {
+      const startDateObj = new Date(startDate);
+      const endDateObj = new Date(endDate);
+      
+      // Get recurring events
+      const recurringEvents = events.filter(event => event.isRecurring && event.recurrence);
+      
+      // Expand recurring events
+      for (const event of recurringEvents) {
+        const recurrenceInstances = this.expandRecurringEvent(
+          event, 
+          startDateObj, 
+          endDateObj
+        );
+        
+        // Add expanded instances to the result
+        expandedEvents = [...expandedEvents, ...recurrenceInstances];
+      }
+      
+      // Sort events by start date
+      expandedEvents.sort((a, b) => 
+        new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+      );
+    }
+
     // Calculate total pages
     const totalPages = Math.ceil(total / limit);
 
     return {
-      data: events,
+      data: expandedEvents,
       meta: {
         total,
         page,
@@ -97,6 +132,91 @@ export const calendarService = {
         totalPages,
       },
     };
+  },
+
+  /**
+   * Expand a recurring event into individual instances
+   */
+  expandRecurringEvent(event: Event, rangeStart: Date, rangeEnd: Date): Event[] {
+    if (!event.isRecurring || !event.recurrence) {
+      return [];
+    }
+
+    const instances: Event[] = [];
+    const recurrence = event.recurrence as any;
+    const eventStart = new Date(event.startDate);
+    const eventEnd = new Date(event.endDate);
+    const duration = eventEnd.getTime() - eventStart.getTime();
+
+    // Maximum number of instances to generate to prevent infinite loops
+    const MAX_INSTANCES = 100;
+    
+    // Get recurrence type and interval
+    const type = recurrence.type || 'none';
+    const interval = recurrence.interval || 1;
+    
+    // Calculate end date for recurrence
+    let recurrenceEndDate = rangeEnd;
+    if (recurrence.endDate) {
+      const endDate = new Date(recurrence.endDate);
+      if (isBefore(endDate, rangeEnd)) {
+        recurrenceEndDate = endDate;
+      }
+    }
+    
+    // Generate instances based on recurrence type
+    let currentDate = new Date(eventStart);
+    let instanceCount = 0;
+    
+    while (isBefore(currentDate, recurrenceEndDate) && instanceCount < MAX_INSTANCES) {
+      // Skip the original event
+      if (instanceCount > 0) {
+        // Only include instances that fall within the range
+        if (!isBefore(currentDate, rangeStart) && !isAfter(currentDate, recurrenceEndDate)) {
+          const instanceEndDate = new Date(currentDate.getTime() + duration);
+          
+          // Create a new instance with a unique ID
+          const instance = {
+            ...event,
+            id: `${event.id}-instance-${instanceCount}`,
+            startDate: currentDate,
+            endDate: instanceEndDate,
+            // Add metadata as part of the title to indicate it's a recurring instance
+            title: `${event.title} (Recurring)`,
+          };
+          
+          instances.push(instance as Event);
+        }
+      }
+      
+      // Calculate next occurrence based on recurrence type
+      switch (type) {
+        case 'daily':
+          currentDate = addDays(currentDate, interval);
+          break;
+        case 'weekly':
+          currentDate = addWeeks(currentDate, interval);
+          break;
+        case 'monthly':
+          currentDate = addMonths(currentDate, interval);
+          break;
+        case 'yearly':
+          currentDate = addYears(currentDate, interval);
+          break;
+        default:
+          // No more instances for unknown recurrence types
+          instanceCount = MAX_INSTANCES;
+      }
+      
+      instanceCount++;
+      
+      // Stop if we've reached the maximum count specified in recurrence
+      if (recurrence.count && instanceCount >= recurrence.count) {
+        break;
+      }
+    }
+    
+    return instances;
   },
 
   /**

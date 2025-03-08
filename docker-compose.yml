@@ -49,6 +49,7 @@ services:
       - PORT=3000
     volumes:
       - ./server:/app
+      - ./prisma:/app/prisma
       - /app/node_modules
 
   frontend:
@@ -60,7 +61,7 @@ services:
     depends_on:
       - backend
     environment:
-      - VITE_API_URL=http://backend:3000/api/v1
+      - VITE_API_URL=http://localhost:3000/api/v1
     volumes:
       - ./client:/app
       - /app/node_modules

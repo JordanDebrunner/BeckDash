@@ -1,142 +1,115 @@
-# BeckDash: A Comprehensive Home Management Platform
+# BeckDash
 
-BeckDash is a unified, scalable, and highly customizable home management system designed to streamline daily household tasks, integrate essential services, and provide an intuitive, user-friendly experience.
+BeckDash is a comprehensive dashboard application for managing household tasks, maintenance schedules, and more.
 
-## 🌟 Core Features
+## Architecture
 
-### 📅 Calendar & Scheduling Hub
-- Task & Event Scheduling
-- Reminders & Notifications
-- Recurring Tasks Support
-- Task Prioritization & Categorization
-- Weather Integration
+The application follows a modern full-stack architecture:
 
-### 🌦️ Weather Dashboard
-- Current & Forecast Data
-- Severe Weather Alerts
-- Smart Recommendations
-
-### 🪴 Plant Care & Gardening Assistant
-- Plant Profiles
-- Automated Care Reminders
-- Seasonal Adjustments
-
-### 🥗 Recipe & Meal Planning System
-- Personal Recipe Book
-- Ingredient Inventory Management
-- Automated Shopping List
-- Nutritional Information Integration
-
-### 🔧 Home Maintenance & Chore Manager
-- Maintenance Logs
-- Chore Assignments
-- Home Improvement Tracking
-
-## Technology Stack
-
-### Frontend
-- React with TypeScript
-- Tailwind CSS for styling
-- Shadcn UI components
-- React Router for navigation
-
-### Backend
-- Node.js + Express
-- JWT Authentication
-- Redis for caching
-- PostgreSQL database with Prisma ORM
-
-### DevOps
-- Docker for containerization
-- GitHub Actions for CI/CD
-- Railway for cloud hosting
-
-## Getting Started
-
-### Prerequisites
-- Node.js (v16+)
-- Docker and Docker Compose
-- Git
-
-### Development Setup
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/beckdash.git
-   cd beckdash
-   ```
-
-2. Install dependencies:
-   ```bash
-   # Install client dependencies
-   cd client
-   npm install
-
-   # Install server dependencies
-   cd ../server
-   npm install
-   ```
-
-3. Configure environment variables:
-   ```bash
-   # Copy the example .env file
-   cp .env.example .env
-   # Edit .env with your own values
-   ```
-
-4. Start development environment:
-   ```bash
-   docker-compose up -d
-   ```
-
-5. Initialize database:
-   ```bash
-   cd server
-   npx prisma migrate dev --name init
-   ```
-
-6. Start development servers:
-   ```bash
-   # In client directory
-   cd ../client
-   npm run dev
-
-   # In server directory (in another terminal)
-   cd ../server
-   npm run dev
-   ```
-
-7. Open your browser and navigate to `http://localhost:5173`
+- **Frontend**: React with TypeScript, using a component-based architecture
+- **Backend**: Node.js with Express, providing RESTful API endpoints
+- **Database**: MongoDB for data persistence
+- **Authentication**: JWT-based authentication system
 
 ## Project Structure
 
-The project follows a modular architecture with clear separation of concerns:
+```
+BeckDash/
+├── client/                 # Frontend React application
+│   ├── public/             # Static assets
+│   └── src/
+│       ├── components/     # React components
+│       ├── pages/          # Page components
+│       ├── services/       # API service modules
+│       └── utils/          # Utility functions
+├── server/                 # Backend Node.js application
+│   ├── src/
+│   │   ├── controllers/    # API controllers
+│   │   ├── middleware/     # Express middleware
+│   │   ├── models/         # MongoDB models
+│   │   ├── routes/         # API routes
+│   │   ├── services/       # Business logic services
+│   │   └── utils/          # Utility functions
+└── shared/                 # Shared code between client and server
+    └── types/              # TypeScript type definitions
+```
 
-- `/client`: Frontend React application
-- `/server`: Backend Express API
-- `/prisma`: Database schema and migrations
-- `/docs`: Project documentation
+## Features
 
-## Feature Implementation Status
+- **User Authentication**: Secure login and registration system
+- **Dashboard**: Overview of important information
+- **Maintenance Tracking**: Schedule and track household maintenance tasks
+- **Calendar**: View scheduled tasks and events
+- **Profile Management**: User profile settings
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| User Authentication | ✅ Complete | Login, registration, profile management |
-| Calendar | ✅ Complete | Event management, recurring events |
-| Weather Dashboard | ✅ Complete | Current conditions, forecasts |
-| Plant Care | ✅ Complete | Plant profiles, watering schedules |
-| Recipes | ✅ Complete | Recipe storage, categorization |
-| Maintenance | ✅ Complete | Task tracking, reminders |
-| Smart Home Integration | 🔄 Planned | Coming in future update |
+## Development Setup
+
+### Prerequisites
+
+- Node.js (v14+)
+- Docker and Docker Compose
+- MongoDB
+
+### Installation
+
+1. Clone the repository:
+   ```
+   git clone https://github.com/yourusername/BeckDash.git
+   cd BeckDash
+   ```
+
+2. Start the application using Docker Compose:
+   ```
+   docker-compose up
+   ```
+
+3. The application will be available at:
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:3000/api/v1
+
+## API Documentation
+
+### Authentication
+
+- `POST /api/v1/auth/register` - Register a new user
+- `POST /api/v1/auth/login` - Login and receive JWT token
+
+### Maintenance Tasks
+
+- `GET /api/v1/maintenance` - Get all maintenance tasks
+- `GET /api/v1/maintenance/:id` - Get a specific maintenance task
+- `POST /api/v1/maintenance` - Create a new maintenance task
+- `PUT /api/v1/maintenance/:id` - Update a maintenance task
+- `DELETE /api/v1/maintenance/:id` - Delete a maintenance task
+- `PUT /api/v1/maintenance/:id/toggle-completion` - Toggle task completion status
+- `GET /api/v1/maintenance/status/overdue` - Get overdue tasks
+- `GET /api/v1/maintenance/status/upcoming` - Get upcoming tasks
+
+## Code Quality and Best Practices
+
+The project follows these best practices:
+
+1. **Type Safety**: Extensive use of TypeScript for type checking
+2. **Shared Types**: Common types shared between client and server
+3. **Error Handling**: Standardized error handling across the application
+4. **API Utilities**: Consistent API request/response handling
+5. **Component Structure**: Reusable and modular component design
+6. **Authentication**: Secure JWT-based authentication
+7. **Code Organization**: Clear separation of concerns
+
+## Recent Improvements
+
+- Added shared type definitions between client and server
+- Implemented standardized API response handling
+- Enhanced error management with custom error classes
+- Improved authentication middleware
+- Created utility functions for API requests
+- Standardized controller and service error handling
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Acknowledgments
+## Contributors
 
-- [React](https://reactjs.org/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Express](https://expressjs.com/)
-- [Prisma](https://www.prisma.io/)
-- [Docker](https://www.docker.com/)
+- Your Name - Initial work and maintenance

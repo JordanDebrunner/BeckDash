@@ -5,7 +5,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 40% 98%;
     --foreground: 222.2 47.4% 11.2%;
 
     --muted: 210 40% 96.1%;
@@ -20,25 +20,25 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 221 83% 53%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 262 83% 58%;
+    --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 100% 50%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --ring: 215 20.2% 65.1%;
+    --ring: 221 83% 53%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 224 71% 4%;
+    --background: 222 47% 11%;
     --foreground: 213 31% 91%;
 
     --muted: 223 47% 11%;
@@ -53,31 +53,43 @@
     --border: 216 34% 17%;
     --input: 216 34% 17%;
 
-    --primary: 210 40% 98%;
+    --primary: 217 91% 60%;
     --primary-foreground: 222.2 47.4% 1.2%;
 
     --secondary: 222.2 47.4% 11.2%;
     --secondary-foreground: 210 40% 98%;
 
-    --accent: 216 34% 17%;
+    --accent: 262 83% 58%;
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 63% 31%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --ring: 216 34% 17%;
+    --ring: 217 91% 60%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 }
 
 @layer base {
   * {
-    @apply border;
+    /* Removing the border that was causing boxes around all elements */
   }
+  
+  /* Make body transparent to allow the animated background to show through */
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    background: transparent !important;
+  }
+
+  /* Theme transition class */
+  .theme-transition {
+    transition: color 0.3s ease, border-color 0.3s ease !important;
+  }
+
+  .theme-transition * {
+    transition: color 0.3s ease, border-color 0.3s ease !important;
   }
 
   /* Custom scrollbar */
@@ -115,6 +127,33 @@
   animation: slideIn 0.3s ease-in-out;
 }
 
+/* Toast notification animations */
+.animate-toast-slide-in {
+  animation: toastSlideIn 0.3s ease forwards, toastFadeOut 0.3s ease 1.7s forwards;
+}
+
+@keyframes toastSlideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toastFadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -143,4 +182,9 @@ h1, h2, h3, h4, h5, h6 {
 /* Focus styles for better accessibility */
 *:focus-visible {
   @apply outline-none ring-2 ring-primary ring-opacity-50;
+}
+
+/* Ensure components with bg-background class don't hide the animated background */
+.bg-background {
+  background: transparent !important;
 }

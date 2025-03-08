@@ -1,0 +1,60 @@
+/* Animation definitions */
+@keyframes float {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(10%, 10%); }
+}
+
+@keyframes wave {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5%); }
+}
+
+.animate-float-slow {
+  animation: float 20s ease-in-out infinite;
+}
+
+.animate-float-medium {
+  animation: float 15s ease-in-out infinite alternate;
+}
+
+.animate-wave {
+  animation: wave 15s ease-in-out infinite;
+}
+
+.animate-wave-delayed {
+  animation: wave 18s ease-in-out 2s infinite;
+}
+
+/* Persistent background styles */
+#persistent-animated-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Ensure the animated background is visible */
+.animated-bg-container {
+  opacity: 1 !important;
+}
+
+/* Ensure the animated shapes are visible */
+.animated-circle {
+  opacity: 0.8 !important;
+}
+
+/* Debug styles to make sure the component is rendering */
+.animated-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 255, 0.05);
+  z-index: -1;
+} 

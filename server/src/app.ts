@@ -15,6 +15,7 @@ import recipeRoutes from './routes/recipes.routes';
 import authRoutes from './routes/auth.routes';
 import calendarRoutes from './routes/calendar.routes';
 import fileUploadRoutes from './routes/fileUpload.routes';
+import maintenanceRoutes from './routes/maintenance.routes';
 import logger from './utils/logger';
 import { serverError } from './utils/responseFormatter';
 import fs from 'fs';
@@ -24,11 +25,10 @@ const app = express();
 
 // Apply middleware
 app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  origin: 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  exposedHeaders: ['Content-Length', 'X-Requested-With', 'Access-Control-Allow-Origin']
+  credentials: true
 }));
 app.use(helmet({
   contentSecurityPolicy: false, // Disable CSP for development
@@ -63,6 +63,7 @@ app.use('/api/v1/plants', plantRoutes);
 app.use('/api/v1/recipes', recipeRoutes);
 app.use('/api/v1/calendar', calendarRoutes);
 app.use('/api/v1/files', fileUploadRoutes);
+app.use('/api/v1/maintenance', maintenanceRoutes);
 
 // 404 handler for API routes
 app.use('/api/v1/*', (req, res) => {

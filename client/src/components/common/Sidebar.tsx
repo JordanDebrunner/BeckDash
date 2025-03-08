@@ -102,15 +102,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       {backdrop}
 
       <div
-        className={`fixed inset-y-0 left-0 z-30 w-64 bg-white dark:bg-gray-900 shadow-lg transform transition-transform lg:translate-x-0 lg:static lg:z-10 ${
+        className={`fixed inset-y-0 left-0 z-30 w-64 bg-white dark:bg-gray-900 shadow-lg transform transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Sidebar header with logo for mobile view */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800 lg:hidden">
-          <span className="text-xl font-bold text-primary">BeckDash</span>
+        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800">
+          <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">BeckDash</span>
           <button
-            className="p-2 rounded-md text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline-none"
+            className="p-2 rounded-md text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline-none transition-colors duration-200"
             onClick={onClose}
             aria-label="Close menu"
           >
@@ -134,10 +134,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <NavLink
                   to={item.path}
                   className={({ isActive }) =>
-                    `flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                    `flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
                       isActive
-                        ? 'bg-primary text-white'
-                        : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground border-l-4 border-primary'
+                        : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary dark:hover:text-primary-foreground'
                     }`
                   }
                   onClick={onClose}

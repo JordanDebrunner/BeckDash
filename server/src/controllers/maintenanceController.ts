@@ -7,16 +7,17 @@
 import { Request, Response } from 'express';
 import { success, badRequest, notFound, serverError } from '../utils/responseFormatter';
 import maintenanceService from '../services/maintenanceService';
-import { RequestWithUser } from '../middleware/authMiddleware';
+import { RequestWithUser } from '../types/request.types';
 import logger from '../utils/logger';
+import { withControllerErrorHandling, validateRequired, validateExists } from '../utils/errorHandler';
 
 // Maintenance controller methods
 const maintenanceController = {
   /**
    * Get all maintenance tasks for the authenticated user
    */
-  async getAllTasks(req: RequestWithUser, res: Response): Promise<Response> {
-    try {
+  getAllTasks: withControllerErrorHandling(
+    async (req: RequestWithUser, res: Response): Promise<Response> => {
       const userId = req.userId;
       logger.debug(`Getting all maintenance tasks for user ID: ${userId}`);
       
@@ -34,17 +35,15 @@ const maintenanceController = {
         logger.error(`Database error fetching tasks for user ${userId}:`, dbError);
         return serverError(res, 'Database error retrieving maintenance tasks');
       }
-    } catch (error) {
-      logger.error('Error in getAllTasks:', error);
-      return serverError(res, 'Failed to retrieve maintenance tasks');
-    }
-  },
+    },
+    'maintenanceController.getAllTasks'
+  ),
 
   /**
    * Get a single maintenance task by ID
    */
-  async getTaskById(req: RequestWithUser, res: Response): Promise<Response> {
-    try {
+  getTaskById: withControllerErrorHandling(
+    async (req: RequestWithUser, res: Response): Promise<Response> => {
       const userId = req.userId;
       if (!userId) {
         return badRequest(res, 'User not authenticated');
@@ -61,17 +60,15 @@ const maintenanceController = {
       }
 
       return success(res, { task }, 'Maintenance task retrieved successfully');
-    } catch (error) {
-      logger.error(`Error in getTaskById for task ${req.params.id}:`, error);
-      return serverError(res, 'Failed to retrieve maintenance task');
-    }
-  },
+    },
+    'maintenanceController.getTaskById'
+  ),
 
   /**
    * Create a new maintenance task
    */
-  async createTask(req: RequestWithUser, res: Response): Promise<Response> {
-    try {
+  createTask: withControllerErrorHandling(
+    async (req: RequestWithUser, res: Response): Promise<Response> => {
       const userId = req.userId;
       logger.debug(`Creating maintenance task for user ID: ${userId}`);
       
@@ -84,10 +81,7 @@ const maintenanceController = {
       logger.debug('Task data received:', { title, dueDate, category, priority });
 
       // Validate required fields
-      if (!title) {
-        logger.error('Task title is missing');
-        return badRequest(res, 'Task title is required');
-      }
+      validateRequired(title, 'Task title');
 
       // Create the task with error handling
       try {
@@ -113,32 +107,26 @@ const maintenanceController = {
         logger.error('Database error creating task:', dbError);
         return serverError(res, 'Database error creating maintenance task');
       }
-    } catch (error) {
-      logger.error('Error in createTask:', error);
-      return serverError(res, 'Failed to create maintenance task');
-    }
-  },
+    },
+    'maintenanceController.createTask'
+  ),
 
   /**
    * Update an existing maintenance task
    */
-  async updateTask(req: RequestWithUser, res: Response): Promise<Response> {
-    try {
+  updateTask: withControllerErrorHandling(
+    async (req: RequestWithUser, res: Response): Promise<Response> => {
       const userId = req.userId;
       if (!userId) {
         return badRequest(res, 'User not authenticated');
       }
 
       const { id } = req.params;
-      if (!id) {
-        return badRequest(res, 'Task ID is required');
-      }
+      validateRequired(id, 'Task ID');
 
       // Check if task exists
       const existingTask = await maintenanceService.getTaskById(id, userId);
-      if (!existingTask) {
-        return notFound(res, 'Maintenance task not found');
-      }
+      validateExists(existingTask, 'Maintenance task');
 
       const { title, description, dueDate, completedDate, frequency, category, priority, notes } = req.body;
 
@@ -155,57 +143,47 @@ const maintenanceController = {
       });
 
       return success(res, { task: updatedTask }, 'Maintenance task updated successfully');
-    } catch (error) {
-      logger.error(`Error in updateTask for task ${req.params.id}:`, error);
-      return serverError(res, 'Failed to update maintenance task');
-    }
-  },
+    },
+    'maintenanceController.updateTask'
+  ),
 
   /**
    * Delete a maintenance task
    */
-  async deleteTask(req: RequestWithUser, res: Response): Promise<Response> {
-    try {
+  deleteTask: withControllerErrorHandling(
+    async (req: RequestWithUser, res: Response): Promise<Response> => {
       const userId = req.userId;
       if (!userId) {
         return badRequest(res, 'User not authenticated');
       }
 
       const { id } = req.params;
-      if (!id) {
-        return badRequest(res, 'Task ID is required');
-      }
+      validateRequired(id, 'Task ID');
 
       // Check if task exists
       const existingTask = await maintenanceService.getTaskById(id, userId);
-      if (!existingTask) {
-        return notFound(res, 'Maintenance task not found');
-      }
+      validateExists(existingTask, 'Maintenance task');
 
       // Delete the task
       await maintenanceService.deleteTask(id, userId);
 
       return success(res, null, 'Maintenance task deleted successfully');
-    } catch (error) {
-      logger.error(`Error in deleteTask for task ${req.params.id}:`, error);
-      return serverError(res, 'Failed to delete maintenance task');
-    }
-  },
+    },
+    'maintenanceController.deleteTask'
+  ),
 
   /**
    * Toggle task completion status
    */
-  async toggleTaskCompletion(req: RequestWithUser, res: Response): Promise<Response> {
-    try {
+  toggleTaskCompletion: withControllerErrorHandling(
+    async (req: RequestWithUser, res: Response): Promise<Response> => {
       const userId = req.userId;
       if (!userId) {
         return badRequest(res, 'User not authenticated');
       }
 
       const { id } = req.params;
-      if (!id) {
-        return badRequest(res, 'Task ID is required');
-      }
+      validateRequired(id, 'Task ID');
 
       const { isComplete } = req.body;
       if (isComplete === undefined) {
@@ -214,25 +192,21 @@ const maintenanceController = {
 
       // Check if task exists
       const existingTask = await maintenanceService.getTaskById(id, userId);
-      if (!existingTask) {
-        return notFound(res, 'Maintenance task not found');
-      }
+      validateExists(existingTask, 'Maintenance task');
 
       // Toggle completion status
       const updatedTask = await maintenanceService.toggleTaskCompletion(id, userId, isComplete);
 
       return success(res, { task: updatedTask }, `Maintenance task marked as ${isComplete ? 'complete' : 'incomplete'}`);
-    } catch (error) {
-      logger.error(`Error in toggleTaskCompletion for task ${req.params.id}:`, error);
-      return serverError(res, 'Failed to update task completion status');
-    }
-  },
+    },
+    'maintenanceController.toggleTaskCompletion'
+  ),
 
   /**
    * Get overdue maintenance tasks
    */
-  async getOverdueTasks(req: RequestWithUser, res: Response): Promise<Response> {
-    try {
+  getOverdueTasks: withControllerErrorHandling(
+    async (req: RequestWithUser, res: Response): Promise<Response> => {
       const userId = req.userId;
       if (!userId) {
         return badRequest(res, 'User not authenticated');
@@ -240,31 +214,27 @@ const maintenanceController = {
 
       const tasks = await maintenanceService.getOverdueTasks(userId);
       return success(res, { tasks }, 'Overdue maintenance tasks retrieved successfully');
-    } catch (error) {
-      logger.error('Error in getOverdueTasks:', error);
-      return serverError(res, 'Failed to retrieve overdue maintenance tasks');
-    }
-  },
+    },
+    'maintenanceController.getOverdueTasks'
+  ),
 
   /**
    * Get upcoming maintenance tasks
    */
-  async getUpcomingTasks(req: RequestWithUser, res: Response): Promise<Response> {
-    try {
+  getUpcomingTasks: withControllerErrorHandling(
+    async (req: RequestWithUser, res: Response): Promise<Response> => {
       const userId = req.userId;
       if (!userId) {
         return badRequest(res, 'User not authenticated');
       }
 
-      const days = req.query.days ? parseInt(req.query.days as string) : 7;
+      const days = req.query.days ? parseInt(req.query.days as string, 10) : 7;
       
       const tasks = await maintenanceService.getUpcomingTasks(userId, days);
       return success(res, { tasks }, `Upcoming maintenance tasks for next ${days} days retrieved successfully`);
-    } catch (error) {
-      logger.error('Error in getUpcomingTasks:', error);
-      return serverError(res, 'Failed to retrieve upcoming maintenance tasks');
-    }
-  },
+    },
+    'maintenanceController.getUpcomingTasks'
+  ),
 };
 
 export default maintenanceController;

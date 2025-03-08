@@ -4,177 +4,83 @@
  * Page for plant care tracking and management
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '../components/common/Layout';
 import Button from '../components/common/Button';
-import { formatDateToLocale } from '../utils/dateUtils';
-
-// Mock plant data (will be replaced with API calls)
-const mockPlants = [
-  {
-    id: '1',
-    name: 'Fiddle Leaf Fig',
-    species: 'Ficus lyrata',
-    image: null,
-    wateringSchedule: 'Every 7 days',
-    lastWatered: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
-    nextWatering: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-    fertilizeSchedule: 'Monthly during growing season',
-    lastFertilized: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), // 15 days ago
-    nextFertilizing: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 days from now
-    location: 'Living Room',
-    lightNeeds: 'Bright indirect light',
-    notes: 'Showing new growth on top branches',
-    healthStatus: 'Healthy',
-  },
-  {
-    id: '2',
-    name: 'Snake Plant',
-    species: 'Sansevieria trifasciata',
-    image: null,
-    wateringSchedule: 'Every 14 days',
-    lastWatered: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
-    nextWatering: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000), // 4 days from now
-    fertilizeSchedule: 'Every 3 months',
-    lastFertilized: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), // 60 days ago
-    nextFertilizing: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-    location: 'Bedroom',
-    lightNeeds: 'Low to medium light',
-    notes: 'Thriving in current location',
-    healthStatus: 'Healthy',
-  },
-  {
-    id: '3',
-    name: 'Monstera',
-    species: 'Monstera deliciosa',
-    image: null,
-    wateringSchedule: 'Every 7 days',
-    lastWatered: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000), // 8 days ago
-    nextWatering: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago (needs water)
-    fertilizeSchedule: 'Monthly during growing season',
-    lastFertilized: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000), // 25 days ago
-    nextFertilizing: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
-    location: 'Office',
-    lightNeeds: 'Bright indirect light',
-    notes: 'Some brown spots on lower leaves',
-    healthStatus: 'Needs Attention',
-  },
-  {
-    id: '4',
-    name: 'Peace Lily',
-    species: 'Spathiphyllum',
-    image: null,
-    wateringSchedule: 'Every 5 days',
-    lastWatered: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
-    nextWatering: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago (needs water)
-    fertilizeSchedule: 'Every 2 months',
-    lastFertilized: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000), // 45 days ago
-    nextFertilizing: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 days from now
-    location: 'Bathroom',
-    lightNeeds: 'Low to medium light',
-    notes: 'Leaves drooping, needs water urgently',
-    healthStatus: 'Danger',
-  },
-];
-
-/**
- * PlantCard component for displaying individual plants
- */
-const PlantCard: React.FC<{ plant: any }> = ({ plant }) => {
-  // Determine status color based on watering needs
-  const getStatusColor = () => {
-    if (plant.healthStatus === 'Danger') {
-      return 'bg-red-100 dark:bg-red-900/30 border-red-400 dark:border-red-900';
-    }
-    if (plant.healthStatus === 'Needs Attention') {
-      return 'bg-amber-100 dark:bg-amber-900/30 border-amber-400 dark:border-amber-900';
-    }
-    return 'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-400 dark:border-emerald-900';
-  };
-
-  // Check if plant needs watering
-  const needsWatering = new Date(plant.nextWatering) <= new Date();
-
-  return (
-    <div className={`rounded-lg border p-4 ${getStatusColor()}`}>
-      <div className="flex justify-between items-start">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{plant.name}</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{plant.species}</p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            plant.healthStatus === 'Healthy'
-              ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400'
-              : plant.healthStatus === 'Needs Attention'
-              ? 'bg-amber-500/10 text-amber-500 dark:text-amber-400'
-              : 'bg-red-500/10 text-red-500 dark:text-red-400'
-          }`}>
-            {plant.healthStatus}
-          </span>
-        </div>
-      </div>
-
-      <div className="mt-4 space-y-2">
-        <div className="flex justify-between">
-          <span className="text-sm text-gray-500 dark:text-gray-400">Location:</span>
-          <span className="text-sm text-gray-700 dark:text-gray-300">{plant.location}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-sm text-gray-500 dark:text-gray-400">Light Needs:</span>
-          <span className="text-sm text-gray-700 dark:text-gray-300">{plant.lightNeeds}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-sm text-gray-500 dark:text-gray-400">Watering Schedule:</span>
-          <span className="text-sm text-gray-700 dark:text-gray-300">{plant.wateringSchedule}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-sm text-gray-500 dark:text-gray-400">Last Watered:</span>
-          <span className="text-sm text-gray-700 dark:text-gray-300">{formatDateToLocale(plant.lastWatered)}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-sm text-gray-500 dark:text-gray-400">Next Watering:</span>
-          <span className={`text-sm ${needsWatering ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-700 dark:text-gray-300'}`}>
-            {formatDateToLocale(plant.nextWatering)} {needsWatering && '(Overdue)'}
-          </span>
-        </div>
-      </div>
-
-      {plant.notes && (
-        <div className="mt-4">
-          <p className="text-sm text-gray-600 dark:text-gray-400">{plant.notes}</p>
-        </div>
-      )}
-
-      <div className="mt-4 flex justify-between">
-        <Button variant="outline" size="sm">
-          Log Care
-        </Button>
-        <Button variant="ghost" size="sm">
-          Edit
-        </Button>
-      </div>
-    </div>
-  );
-};
+import PlantCard from '../components/plants/PlantCard';
+import PlantStatistics from '../components/plants/PlantStatistics';
+import AddPlantForm from '../components/plants/AddPlantForm';
+import EditPlantForm from '../components/plants/EditPlantForm';
+import plantService, { Plant } from '../services/plant.service';
+import { parseISO, isAfter } from 'date-fns';
 
 /**
  * Plants page component
  */
 const PlantsPage: React.FC = () => {
   // Local state
-  const [plants, setPlants] = useState(mockPlants);
-  const [filter, setFilter] = useState('all'); // all, needs-water, needs-attention
-  const [isLoading, setIsLoading] = useState(false);
+  const [plants, setPlants] = useState<Plant[]>([]);
+  const [filter, setFilter] = useState('all'); // all, needs-water, needs-attention, needs-fertilizer
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [currentPlant, setCurrentPlant] = useState<Plant | null>(null);
+  const [showStatistics, setShowStatistics] = useState(true);
+
+  // Fetch plants on component mount
+  useEffect(() => {
+    fetchPlants();
+  }, []);
+
+  // Fetch plants from API
+  const fetchPlants = async () => {
+    setIsLoading(true);
+    try {
+      const fetchedPlants = await plantService.getPlants();
+      setPlants(fetchedPlants);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching plants:', err);
+      setError('Failed to load plants. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle plant deletion
+  const handleDeletePlant = async (id: string) => {
+    try {
+      setIsLoading(true);
+      await plantService.deletePlant(id);
+      setPlants(plants.filter(plant => plant.id !== id));
+    } catch (err) {
+      console.error('Error deleting plant:', err);
+      setError('Failed to delete plant. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle edit plant click
+  const handleEditClick = (plant: Plant) => {
+    setCurrentPlant(plant);
+    setShowEditModal(true);
+  };
 
   // Filter plants based on selected filter and search query
   const filteredPlants = plants.filter(plant => {
+    const today = new Date();
+    
     // Apply status filter
-    if (filter === 'needs-water' && new Date(plant.nextWatering) > new Date()) {
+    if (filter === 'needs-water' && (!plant.nextWatering || !isAfter(today, parseISO(plant.nextWatering)))) {
       return false;
     }
-    if (filter === 'needs-attention' && plant.healthStatus === 'Healthy') {
+    if (filter === 'needs-fertilizer' && (!plant.nextFertilizing || !isAfter(today, parseISO(plant.nextFertilizing)))) {
+      return false;
+    }
+    if (filter === 'needs-attention' && plant.healthStatus !== 'Needs Attention' && plant.healthStatus !== 'Danger') {
       return false;
     }
 
@@ -183,8 +89,8 @@ const PlantsPage: React.FC = () => {
       const query = searchQuery.toLowerCase();
       return (
         plant.name.toLowerCase().includes(query) ||
-        plant.species.toLowerCase().includes(query) ||
-        plant.location.toLowerCase().includes(query)
+        (plant.species && plant.species.toLowerCase().includes(query)) ||
+        (plant.location && plant.location.toLowerCase().includes(query))
       );
     }
 
@@ -204,7 +110,16 @@ const PlantsPage: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-4">
-            <Button variant="primary" onClick={() => {}}>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowStatistics(!showStatistics)}
+            >
+              {showStatistics ? 'Hide Statistics' : 'Show Statistics'}
+            </Button>
+            <Button 
+              variant="primary" 
+              onClick={() => setShowAddModal(true)}
+            >
               <svg
                 className="w-5 h-5 mr-2"
                 fill="none"
@@ -223,6 +138,13 @@ const PlantsPage: React.FC = () => {
             </Button>
           </div>
         </div>
+
+        {/* Statistics Section */}
+        {showStatistics && (
+          <div className="mb-6">
+            <PlantStatistics plants={plants} />
+          </div>
+        )}
 
         {/* Search and filters */}
         <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
@@ -251,8 +173,8 @@ const PlantsPage: React.FC = () => {
                 <input
                   type="text"
                   id="search"
+                  className="pl-10 w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                   placeholder="Search plants..."
-                  className="pl-10 pr-3 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -261,30 +183,40 @@ const PlantsPage: React.FC = () => {
 
             <div className="flex space-x-2">
               <button
-                className={`px-4 py-2 text-sm font-medium rounded-md ${
+                className={`px-3 py-2 rounded-md text-sm font-medium ${
                   filter === 'all'
-                    ? 'bg-primary text-white'
-                    : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-700 dark:text-indigo-100'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
                 onClick={() => setFilter('all')}
               >
                 All Plants
               </button>
               <button
-                className={`px-4 py-2 text-sm font-medium rounded-md ${
+                className={`px-3 py-2 rounded-md text-sm font-medium ${
                   filter === 'needs-water'
-                    ? 'bg-primary text-white'
-                    : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-700 dark:text-blue-100'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
                 onClick={() => setFilter('needs-water')}
               >
                 Needs Water
               </button>
               <button
-                className={`px-4 py-2 text-sm font-medium rounded-md ${
+                className={`px-3 py-2 rounded-md text-sm font-medium ${
+                  filter === 'needs-fertilizer'
+                    ? 'bg-green-100 text-green-700 dark:bg-green-700 dark:text-green-100'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+                onClick={() => setFilter('needs-fertilizer')}
+              >
+                Needs Fertilizer
+              </button>
+              <button
+                className={`px-3 py-2 rounded-md text-sm font-medium ${
                   filter === 'needs-attention'
-                    ? 'bg-primary text-white'
-                    : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-700 dark:text-amber-100'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
                 onClick={() => setFilter('needs-attention')}
               >
@@ -294,16 +226,57 @@ const PlantsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Loading state */}
-        {isLoading && (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+        {/* Plants grid */}
+        {isLoading && plants.length === 0 ? (
+          <div className="text-center py-12">
+            <svg
+              className="mx-auto h-12 w-12 text-gray-400 animate-spin"
+              fill="none"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            <p className="mt-4 text-gray-500 dark:text-gray-400">Loading plants...</p>
           </div>
-        )}
-
-        {/* No plants message */}
-        {!isLoading && filteredPlants.length === 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
+        ) : error ? (
+          <div className="text-center py-12">
+            <svg
+              className="mx-auto h-12 w-12 text-red-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <p className="mt-4 text-red-500">{error}</p>
+            <button
+              className="mt-4 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
+              onClick={fetchPlants}
+            >
+              Try Again
+            </button>
+          </div>
+        ) : filteredPlants.length === 0 ? (
+          <div className="text-center py-12">
             <svg
               className="mx-auto h-12 w-12 text-gray-400"
               fill="none"
@@ -315,70 +288,69 @@ const PlantsPage: React.FC = () => {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
               />
             </svg>
-            <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-white">
-              No plants found
-            </h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-4 text-gray-500 dark:text-gray-400">
               {searchQuery
-                ? 'No plants match your search criteria.'
-                : filter === 'needs-water'
-                ? 'All your plants are watered!'
-                : filter === 'needs-attention'
-                ? 'All your plants are healthy!'
-                : 'Get started by adding your first plant.'}
+                ? 'No plants match your search criteria'
+                : filter !== 'all'
+                ? 'No plants match the selected filter'
+                : 'No plants found. Add your first plant to get started!'}
             </p>
-            {filter !== 'all' && (
+            {(searchQuery || filter !== 'all') && (
               <button
-                className="mt-4 text-sm text-primary hover:text-primary-dark"
-                onClick={() => setFilter('all')}
+                className="mt-4 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
+                onClick={() => {
+                  setSearchQuery('');
+                  setFilter('all');
+                }}
               >
-                View all plants
+                Clear Filters
               </button>
             )}
           </div>
-        )}
-
-        {/* Plants grid */}
-        {!isLoading && filteredPlants.length > 0 && (
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPlants.map((plant) => (
-              <PlantCard key={plant.id} plant={plant} />
+              <PlantCard 
+                key={plant.id} 
+                plant={plant} 
+                onUpdate={() => handleEditClick(plant)}
+                onDelete={handleDeletePlant}
+              />
             ))}
           </div>
         )}
+      </div>
 
-        {/* Implementation note for future development */}
-        <div className="bg-yellow-50 dark:bg-yellow-900/30 p-4 rounded-lg">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-yellow-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                Development Note
-              </h3>
-              <p className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
-                This page currently displays mock data. In a production version, it would connect to the backend API for plant management.
-              </p>
-            </div>
+      {/* Add Plant Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="max-w-2xl w-full">
+            <AddPlantForm 
+              onClose={() => setShowAddModal(false)}
+              onPlantAdded={fetchPlants}
+            />
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Edit Plant Modal */}
+      {showEditModal && currentPlant && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="max-w-2xl w-full">
+            <EditPlantForm 
+              plant={currentPlant}
+              onClose={() => {
+                setShowEditModal(false);
+                setCurrentPlant(null);
+              }}
+              onPlantUpdated={fetchPlants}
+            />
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

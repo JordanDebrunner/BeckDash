@@ -36,30 +36,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     closeSidebar();
   }, [location.pathname]);
 
-  // Close sidebar on window resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setIsSidebarOpen(false);
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <div className="min-h-screen text-foreground transition-colors duration-300 relative z-1" style={{ background: 'transparent' }}>
       <Header toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
 
       <div className="flex">
         <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
 
-        <main className="flex-1 p-4 lg:p-6 pt-4">
-          {children}
+        <main className="flex-1 p-4 lg:p-8 pt-6 transition-all duration-300 ease-in-out" style={{ background: 'transparent' }}>
+          <div className="max-w-7xl mx-auto">
+            <div className="fadeIn">
+              {children}
+            </div>
+          </div>
         </main>
       </div>
     </div>

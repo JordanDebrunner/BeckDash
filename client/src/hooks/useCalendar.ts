@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Event, EventsFilter } from '../types/Event';
+import { Event, EventsFilter, CreateEventRequest, UpdateEventRequest } from '../types/Event';
 import calendarService from '../services/calendar.service';
 import {
   startOfMonth,
@@ -14,6 +14,7 @@ import {
   subMonths,
   getCalendarDays
 } from '../utils/dateUtils';
+import useAuth from '../hooks/useAuth';
 
 // View types for the calendar
 export type CalendarView = 'month' | 'week' | 'day' | 'agenda';
@@ -44,12 +45,15 @@ interface UseCalendarResult {
 
   // Event actions
   fetchEvents: (filter?: EventsFilter) => Promise<void>;
-  createEvent: (eventData: any) => Promise<Event>;
-  updateEvent: (id: string, eventData: any) => Promise<Event>;
+  createEvent: (eventData: CreateEventRequest) => Promise<Event>;
+  updateEvent: (id: string, eventData: UpdateEventRequest) => Promise<Event>;
   deleteEvent: (id: string) => Promise<void>;
 
   // Helper functions
   getEventsForDate: (date: Date) => Event[];
+
+  // New function
+  getEventById: (id: string) => Promise<Event | undefined>;
 }
 
 /**
@@ -59,6 +63,7 @@ export const useCalendar = ({
   initialDate = new Date(),
   initialView = 'month'
 }: UseCalendarProps = {}): UseCalendarResult => {
+  const { isAuthenticated } = useAuth();
   // State
   const [currentDate, setCurrentDate] = useState<Date>(initialDate);
   const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
@@ -83,15 +88,24 @@ export const useCalendar = ({
     setSelectedDate(today);
   }, []);
 
-  // Fetch events from API
-  const fetchEvents = useCallback(async (filter?: EventsFilter) => {
+  /**
+   * Fetch events with optional filtering
+   */
+  const fetchEvents = useCallback(async (filter?: EventsFilter): Promise<void> => {
+    if (!isAuthenticated) {
+      setError('Please log in to access calendar events');
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
     try {
-      // If no filter provided, fetch events for the current month
+      console.log('Fetching calendar events with filter:', filter);
+      
+      // If no filter provided, default to current month
       if (!filter) {
-        // Get start and end of the month based on currentDate
         const start = startOfMonth(currentDate);
         const end = endOfMonth(currentDate);
 
@@ -101,18 +115,29 @@ export const useCalendar = ({
         };
       }
 
-      const response = await calendarService.getEvents(filter);
-      setEvents(response.events);
+      const fetchedEvents = await calendarService.getEvents(filter);
+      console.log('Calendar events fetched:', fetchedEvents);
+      setEvents(fetchedEvents);
     } catch (error) {
       console.error('Error fetching events:', error);
-      setError('Failed to fetch events. Please try again.');
+      
+      if (error instanceof Error) {
+        // Check if it's an authentication error
+        if (error.message.includes('Authentication required') || error.message.includes('log in')) {
+          setError('Please log in to access calendar events');
+        } else {
+          setError(`Failed to fetch events: ${error.message}`);
+        }
+      } else {
+        setError('Failed to fetch events. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
   }, [currentDate]);
 
   // Create a new event
-  const createEvent = async (eventData: any): Promise<Event> => {
+  const createEvent = async (eventData: CreateEventRequest): Promise<Event> => {
     setIsLoading(true);
     setError(null);
 
@@ -122,7 +147,21 @@ export const useCalendar = ({
       return createdEvent;
     } catch (error) {
       console.error('Error creating event:', error);
-      setError('Failed to create event. Please try again.');
+      if (error instanceof Error) {
+        if ('response' in error && error.response) {
+          // API error with response
+          const responseError = error.response as any;
+          setError(`Failed to create event: ${responseError.data?.message || responseError.statusText || 'Server error'}`);
+        } else if ('request' in error) {
+          // Network error
+          setError('Failed to create event: Network error. Please check your connection.');
+        } else {
+          // Other errors
+          setError(`Failed to create event: ${error.message || 'Unknown error'}`);
+        }
+      } else {
+        setError('Failed to create event. Please try again.');
+      }
       throw error;
     } finally {
       setIsLoading(false);
@@ -130,19 +169,21 @@ export const useCalendar = ({
   };
 
   // Update an existing event
-  const updateEvent = async (id: string, eventData: any): Promise<Event> => {
+  const updateEvent = async (id: string, eventData: UpdateEventRequest): Promise<Event> => {
     setIsLoading(true);
-    setError(null);
-
     try {
       const updatedEvent = await calendarService.updateEvent(id, eventData);
-      setEvents(prev =>
-        prev.map(event => event.id === id ? updatedEvent : event)
+      
+      // Update the events in state
+      setEvents(prevEvents => 
+        prevEvents.map(event => 
+          event.id === id ? updatedEvent : event
+        )
       );
+      
       return updatedEvent;
     } catch (error) {
       console.error('Error updating event:', error);
-      setError('Failed to update event. Please try again.');
       throw error;
     } finally {
       setIsLoading(false);
@@ -159,7 +200,21 @@ export const useCalendar = ({
       setEvents(prev => prev.filter(event => event.id !== id));
     } catch (error) {
       console.error('Error deleting event:', error);
-      setError('Failed to delete event. Please try again.');
+      if (error instanceof Error) {
+        if ('response' in error && error.response) {
+          // API error with response
+          const responseError = error.response as any;
+          setError(`Failed to delete event: ${responseError.data?.message || responseError.statusText || 'Server error'}`);
+        } else if ('request' in error) {
+          // Network error
+          setError('Failed to delete event: Network error. Please check your connection.');
+        } else {
+          // Other errors
+          setError(`Failed to delete event: ${error.message || 'Unknown error'}`);
+        }
+      } else {
+        setError('Failed to delete event. Please try again.');
+      }
       throw error;
     } finally {
       setIsLoading(false);
@@ -190,6 +245,29 @@ export const useCalendar = ({
     fetchEvents();
   }, [fetchEvents]);
 
+  /**
+   * Get a specific event by ID
+   */
+  const getEventById = async (id: string): Promise<Event | undefined> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const event = await calendarService.getEventById(id);
+      return event;
+    } catch (error) {
+      console.error(`Error fetching event with ID ${id}:`, error);
+      if (error instanceof Error) {
+        setError(`Failed to fetch event: ${error.message}`);
+      } else {
+        setError('Failed to fetch event. Please try again.');
+      }
+      return undefined;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     currentDate,
     selectedDate,
@@ -209,6 +287,7 @@ export const useCalendar = ({
     updateEvent,
     deleteEvent,
     getEventsForDate,
+    getEventById,
   };
 };
 

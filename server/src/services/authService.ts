@@ -187,14 +187,20 @@ export const authService = {
    * Update user profile
    */
   async updateProfile(userId: string, data: Partial<User>): Promise<User> {
+    console.log('Auth service: updating profile for user', userId, 'with data:', data);
+    
     // Prevent updating sensitive fields
     const { id, password, email, createdAt, updatedAt, ...updateData } = data;
+    
+    console.log('Auth service: filtered update data:', updateData);
 
     // Update user
     const user = await prisma.user.update({
       where: { id: userId },
       data: updateData,
     });
+
+    console.log('Auth service: user updated successfully:', user);
 
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user;
